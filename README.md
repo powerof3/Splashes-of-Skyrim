@@ -1,2 +1,2 @@
-# FEC Helper plugin
-Helper plugin for Frozen Electrocuted Combustion (FEC)
+# Splashes of Skyrim
+Adds water splashes and ripples to all water surfaces
