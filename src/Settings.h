@@ -9,9 +9,8 @@ namespace Splash
 		kCone = 2,
 		kArrow = 3,
 		kExplosion = 4,
-		kRain = 5,
 
-		kTotal = 6
+		kTotal = 5
 	};
 
 	enum SIZE : std::uint32_t
@@ -20,7 +19,6 @@ namespace Splash
 		kMedium = 1,
 		kLight = 2
 	};
-
 
 	class Settings
 	{
@@ -34,20 +32,25 @@ namespace Splash
 		float GetSplashRadius(SIZE a_size) const;
 		float GetSplashScale(SIZE a_size) const;
 		Setting GetSplashSetting(TYPE a_type) const;
-		
+		std::pair<bool, bool> GetInstallSetting(TYPE a_type) const;
+
 		bool GetPatchDisplacement() const;
 		bool GetAllowDamageWater() const;
 
-	private:
-		std::tuple<std::string, float> GetType(std::uint32_t a_type);
-		std::pair<std::string, float> GetSize(std::uint32_t a_size);
+		[[nodiscard]] float GetExplosionSplashRadius() const;
 
-		bool patchDisplacement;
-		bool allowDamageWater;
-		
+	private:
+		static std::tuple<std::string, float> GetType(std::uint32_t a_type);
+		static std::pair<std::string, float> GetSize(std::uint32_t a_size);
+
+		bool patchDisplacement{ false };
+		bool allowDamageWater{ false };
+
 		std::vector<float> splashRadii;
 		std::vector<float> splashScales;
 
 		std::vector<Setting> splashSettings;
+
+		float explosionSplashRadius{ 0.0 };
 	};
 }

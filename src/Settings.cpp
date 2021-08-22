@@ -8,7 +8,6 @@ namespace Splash
 		return std::addressof(singleton);
 	}
 
-
 	std::tuple<std::string, float> Settings::GetType(std::uint32_t a_type)
 	{
 		switch (a_type) {
@@ -41,7 +40,6 @@ namespace Splash
 			return std::make_tuple(std::string(), 1.0f);
 		}
 	}
-
 
 	std::pair<std::string, float> Settings::GetSize(std::uint32_t a_size)
 	{
@@ -81,14 +79,15 @@ namespace Splash
 		}
 	}
 
-
 	void Settings::LoadSettings()
 	{
+		constexpr auto path = L"Data/SKSE/Plugins/po3_SplashesOfSkyrim.ini";
+
 		CSimpleIniA ini;
 		ini.SetUnicode();
 		ini.SetMultiKey();
 
-		ini.LoadFile(L"Data/SKSE/Plugins/po3_SplashesOfSkyrim.ini");
+		ini.LoadFile(path);
 
 		patchDisplacement = ini.GetBoolValue("Settings", "Enable Full Displacement", true);
 		ini.SetBoolValue("Settings", "Enable Full Displacement", patchDisplacement, ";Enables water displacement on all water surfaces", true);
@@ -96,7 +95,6 @@ namespace Splash
 		allowDamageWater = ini.GetBoolValue("Settings", "Enable On Dangerous Water", false);
 		ini.SetBoolValue("Settings", "Enable On Dangerous Water", allowDamageWater, ";Enables splashes on water marked as dangerous (i.e survival mods use this).\nLava and other non water surfaces may trigger water splashes!", true);
 
-		
 		for (auto i = 0; i < 3; i++) {
 			auto [name, def] = GetSize(i);
 
@@ -115,7 +113,7 @@ namespace Splash
 			splashScales.push_back(value);
 		}
 
-		for (auto i = TYPE::kMissile; i < TYPE::kExplosion; i++) {
+		for (auto i = stl::to_underlying(kMissile); i < stl::to_underlying(kExplosion); i++) {
 			auto [name, defMult] = GetType(i);
 
 			Setting setting;
@@ -135,7 +133,7 @@ namespace Splash
 
 			modelPathFire = ini.GetValue(name.c_str(), "NIF Path (Fire)", R"(Effects\ImpactEffects\ImpactWaterSplashFire.nif)");
 			ini.SetValue(name.c_str(), "NIF Path (Fire)", modelPathFire.c_str(), i == TYPE::kMissile ? ";Fire impact effect" : "", true);
-	
+
 			modelPathDragon = ini.GetValue(name.c_str(), "NIF Path (Dragon)", R"(Effects\ImpactEffects\FXDragonFireImpactWater.nif)");
 			ini.SetValue(name.c_str(), "NIF Path (Dragon)", modelPathDragon.c_str(), i == TYPE::kMissile ? ";Dragon fire impact effect" : "", true);
 
@@ -155,7 +153,7 @@ namespace Splash
 		ini.SetDoubleValue("Explosion", "Displacement Mult", static_cast<double>(displacementMult), "", true);
 
 		auto constexpr explosionPath{ R"(Effects\ExplosionSplash.NIF)" };
-		
+
 		modelPath = ini.GetValue("Explosion", "NIF Path", explosionPath);
 		ini.SetValue("Explosion", "NIF Path", modelPath.c_str(), ";Regular explosion", true);
 
@@ -165,11 +163,13 @@ namespace Splash
 		modelPathDragon = ini.GetValue("Explosion", "NIF Path (Dragon)", explosionPath);
 		ini.SetValue("Explosion", "NIF Path (Dragon)", modelPathDragon.c_str(), ";Dragon fire explosion", true);
 
+		explosionSplashRadius = static_cast<float>(ini.GetDoubleValue("Explosion", "Default Explosion Splash Radius", 250.0f));
+		ini.SetDoubleValue("Explosion", "Default Explosion Splash Radius", static_cast<double>(explosionSplashRadius), ";Default explosion radius used to scale underwater explosions", true);
+
 		splashSettings.push_back(setting);
 
-		ini.SaveFile(L"Data/SKSE/Plugins/po3_SplashesOfSkyrim.ini");
+		ini.SaveFile(path);
 	}
-
 
 	float Settings::GetSplashRadius(SIZE a_size) const
 	{
@@ -181,21 +181,29 @@ namespace Splash
 		return splashScales[a_size];
 	}
 
-
 	Settings::Setting Settings::GetSplashSetting(TYPE a_type) const
 	{
 		return splashSettings[a_type];
 	}
 
+	std::pair<bool, bool> Settings::GetInstallSetting(TYPE a_type) const
+	{
+		auto setting = splashSettings[a_type];
+		return std::make_pair(std::get<0>(setting), std::get<1>(setting));
+	}
 
 	bool Settings::GetPatchDisplacement() const
 	{
 		return patchDisplacement;
 	}
-	
-	
+
 	bool Settings::GetAllowDamageWater() const
 	{
 		return allowDamageWater;
+	}
+
+	float Settings::GetExplosionSplashRadius() const
+	{
+		return explosionSplashRadius;
 	}
 }
