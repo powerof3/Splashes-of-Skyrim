@@ -18,6 +18,13 @@
 * [CommonLibVR](https://github.com/alandtse/CommonLibVR/tree/vr)
 	* Add this as as an environment variable `CommonLibVRPath`
 
+## User Requirements
+* [Address Library for SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+	* Needed for SSE
+* [VR Address Library for SKSEVR](https://www.nexusmods.com/skyrimspecialedition/mods/58101)
+	* Needed for VR
+
+
 ## Register Visual Studio as a Generator
 * Open `x64 Native Tools Command Prompt`
 * Run `cmake`
