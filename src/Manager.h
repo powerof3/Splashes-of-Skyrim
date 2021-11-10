@@ -81,8 +81,8 @@ struct util
 	{
 		const auto displacement = 0.0099999998f * a_displacementMult;
 
-		if (!a_skipQueue || RE::BSTaskPool::ShouldUseTaskPool()) {
-			if (const auto taskPool = RE::BSTaskPool::GetSingleton(); taskPool) {
+		if (!a_skipQueue || RE::TaskQueueInterface::ShouldUseTaskQueue()) {
+			if (const auto taskPool = RE::TaskQueueInterface::GetSingleton(); taskPool) {
 				taskPool->QueueBulletWaterDisplacementTask(displacement, a_pos);
 			}
 		} else {
