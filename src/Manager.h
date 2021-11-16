@@ -4,6 +4,12 @@
 
 struct util
 {
+	template <typename First, typename... T>
+	[[nodiscard]] static bool string_contains(First&& first, T&&... t)
+	{
+		return (string::icontains(first, t) || ...);
+	}
+	
 	static std::uint32_t get_effect_type(const RE::NiAVObject* a_object)
 	{
 		static auto constexpr Fire{ "fire"sv };
@@ -11,7 +17,7 @@ struct util
 		static auto constexpr Dragon{ "dragon"sv };
 
 		const std::string name(a_object->name);
-		if (string::icontains(name, Fire) || string::icontains(name, Flame)) {
+		if (string_contains(name, Fire, Flame)) {
 			if (string::icontains(name, Dragon)) {
 				return 2;
 			}
@@ -24,8 +30,10 @@ struct util
 	{
 		float waterHeight = -RE::NI_INFINITY;
 
-		if (const auto waterManager = RE::BGSWaterSystemManager::GetSingleton(); waterManager && waterManager->enabled) {
+		const auto waterManager = RE::BGSWaterSystemManager::GetSingleton(); 
+		if (waterManager && waterManager->enabled) {
 			waterHeight = a_ref->GetWaterHeight();
+			
 			if (!numeric::essentially_equal(waterHeight, -RE::NI_INFINITY)) {
 				return waterHeight;
 			}
@@ -81,8 +89,8 @@ struct util
 	{
 		const auto displacement = 0.0099999998f * a_displacementMult;
 
-		if (!a_skipQueue || RE::BSTaskPool::ShouldUseTaskPool()) {
-			if (const auto taskPool = RE::BSTaskPool::GetSingleton(); taskPool) {
+		if (!a_skipQueue || RE::TaskQueueInterface::ShouldUseTaskQueue()) {
+			if (const auto taskPool = RE::TaskQueueInterface::GetSingleton(); taskPool) {
 				taskPool->QueueBulletWaterDisplacementTask(displacement, a_pos);
 			}
 		} else {
@@ -296,7 +304,7 @@ public:
 		REL::Relocation<std::uintptr_t> target{ REL::ID(42696) };
 		stl::write_thunk_call<UpdateSound>(target.address() + 0x33C);
 
-		//skip vanilla explosion particle spawn (waste if emptyFX)
+		//skip vanilla explosion particle spawn (waste of emptyFX)
 		constexpr std::uint8_t JMP[] = { 0x90, 0xE9 };
 		REL::safe_write(target.address() + 0x3A3, JMP, 2);
 	}
@@ -372,16 +380,19 @@ class RainManager
 public:
 	static void Install()
 	{
-		REL::Relocation<std::uintptr_t> target{ REL::ID(25638), 0x238 };
+		REL::Relocation<std::uintptr_t> target{ REL::ID(39401), 0x202 };
 		stl::write_thunk_call<ToggleWaterRipples>(target.address());
+
+		logger::info("installed rain manager");
 	}
 
 private:
 	struct ToggleWaterRipples
 	{
-		static void thunk(RE::BGSWaterSystemManager* a_manager, bool a_toggle, float a_unk03)
+		static std::uint32_t thunk(RE::BSAudioManager* a_manager, RE::NiAVObject* a_object, RE::NiAVObject* a_object2)
 		{
-			logger::info("toggle : {} , {}", a_toggle, a_unk03);
+			logger::info("{} : [{}, {}]", a_object->GetUserData() ? a_object->GetUserData()->GetName() : "none owner", a_object->name, a_object2->name);
+			return func(a_manager, a_object, a_object2);
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
 	};

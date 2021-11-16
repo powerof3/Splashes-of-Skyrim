@@ -188,7 +188,7 @@ namespace Splash
 
 	std::pair<bool, bool> Settings::GetInstallSetting(TYPE a_type) const
 	{
-		auto setting = splashSettings[a_type];
+		auto& setting = splashSettings[a_type];
 		return std::make_pair(std::get<0>(setting), std::get<1>(setting));
 	}
 
