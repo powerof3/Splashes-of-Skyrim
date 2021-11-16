@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
+set(NAME "po3_SplashesOfSkyrim")
+set(VERSION 1.5.0)
 
 # ---- Options ----
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." TRUE)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 
 # ---- Cache build vars ----
 
@@ -14,8 +17,27 @@ endmacro()
 
 set_from_environment(Skyrim64Path)
 set_from_environment(VCPKG_ROOT)
-set_from_environment(CommonLibSSEPath)
-
+if(BUILD_SKYRIMVR)
+	add_compile_definitions(SKYRIMVR)
+	set_from_environment(CommonLibVRPath)
+	set(CommonLibPath ${CommonLibVRPath})
+	set(CommonLibName "CommonLibVR")
+	set_from_environment(SkyrimVRPath)
+	set(SkyrimPath ${SkyrimVRPath})
+	set(SkyrimVersion "Skyrim VR")
+	set(VERSION "${VERSION}.1")
+else()
+	set_from_environment(CommonLibSSEPath)
+	set(CommonLibPath ${CommonLibSSEPath})
+	set(CommonLibName "CommonLibSSE")
+	set_from_environment(Skyrim64Path)
+	set(SkyrimPath ${Skyrim64Path})
+	set(SkyrimVersion "Skyrim SSE")
+endif()
+message(
+	STATUS
+	"Building for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
+)
 if (DEFINED VCPKG_ROOT)
 	set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 	set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
@@ -33,8 +55,8 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 # ---- Project ----
 
 project(
-	po3_SplashesOfSkyrim
-	VERSION 1.5.0
+	${NAME}
+	VERSION ${VERSION}
 	LANGUAGES CXX
 )
 
@@ -83,14 +105,14 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----
-if (DEFINED CommonLibSSEPath AND NOT ${CommonLibSSEPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibSSEPath})
-	add_subdirectory(${CommonLibSSEPath} CommonLibSSE)
+if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
+	add_subdirectory(${CommonLibPath} ${CommonLibName})
 else ()
 	message(
 		FATAL_ERROR
-		"Variable CommonLibSSEPath is not set."
+		"Variable ${CommonLibName}Path is not set."
 	)
-endif ()
+endif()
 
 find_package(Boost MODULE REQUIRED)
 find_package(spdlog REQUIRED CONFIG)
@@ -149,7 +171,7 @@ target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 		Boost::headers
-		CommonLibSSE::CommonLibSSE
+		${CommonLibName}::${CommonLibName}
 		spdlog::spdlog
 		xbyak::xbyak
 )
@@ -204,10 +226,10 @@ if (MSVC)
 			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
 			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
 	)
-	
+
 	# fix a warning with /Ob2 being overridden with /Ob3
 	string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-	
+
 endif ()
 
 target_precompile_headers(
@@ -219,17 +241,17 @@ target_precompile_headers(
 # ---- Post build ----
 
 if (COPY_BUILD)
-	if (DEFINED Skyrim64Path)
+	if (DEFINED SkyrimPath)
 		add_custom_command(
 			TARGET ${PROJECT_NAME}
 			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${Skyrim64Path}/Data/SKSE/Plugins/
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${Skyrim64Path}/Data/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${SkyrimPath}/Data/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${SkyrimPath}/Data/SKSE/Plugins/
 		)
 	else ()
 		message(
 			WARNING
-			"Variable Skyrim64Path is not defined. Skipping post-build copy command."
+			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
 		)
 	endif ()
 endif ()
