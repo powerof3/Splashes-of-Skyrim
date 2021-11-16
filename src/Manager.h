@@ -283,8 +283,8 @@ void ProjectileManager<T, type>::Install()
 
 	//disabling cone water splash
 	if constexpr (type == Splash::kCone) {
-		REL::Relocation<std::uintptr_t> target{ REL::ID(42638), 0x48D };
-		REL::safe_write(target.address(), std::uint8_t{ 0xEB });
+		REL::Relocation<std::uintptr_t> target{ REL::Offset(0x762020) };
+		REL::safe_write(target.address() + 0x3B7, std::uint8_t{ 0xEB });
 	}
 
 	logger::info("Installed {}"sv, typeid(ProjectileManager).name());
@@ -301,30 +301,32 @@ public:
 			return;
 		}
 
-		REL::Relocation<std::uintptr_t> target{ REL::ID(42696) };
-		stl::write_thunk_call<UpdateSound>(target.address() + 0x33C);
+		REL::Relocation<std::uintptr_t> target{ REL::Offset(0x768200) };
+		stl::write_thunk_call<IsSoundHandleValid>(target.address() + 0x528);
 
 		//skip vanilla explosion particle spawn (waste of emptyFX)
 		constexpr std::uint8_t JMP[] = { 0x90, 0xE9 };
-		REL::safe_write(target.address() + 0x3A3, JMP, 2);
+		REL::safe_write(target.address() + 0x57F, JMP, 2);
 	}
 
 private:
-	struct UpdateSound
+	//UpdateSound got inlined
+	struct IsSoundHandleValid
 	{
-		static void thunk(RE::Explosion* a_explosion)
+		static bool thunk(const RE::BSSoundHandle& a_handle)
 		{
-			func(a_explosion);
+			auto result = func(a_handle);
 
-			const auto cell = a_explosion->parentCell;
-			const auto root = cell && a_explosion->flags.any(RE::Explosion::Flags::kInWater) ? a_explosion->Get3D() : nullptr;
+			const auto explosion = stl::adjust_pointer<RE::Explosion>(&a_handle, -0xD0);
+			const auto cell = explosion ? explosion->parentCell : nullptr;
+			const auto root = cell && explosion->flags.any(RE::Explosion::Flags::kInWater) ? explosion->Get3D() : nullptr;
 
 			if (root) {
 				const auto setting = Splash::Settings::GetSingleton();
 				auto [enable, fireOnly, displacementMult, modelPath, modelPathFire, modelPathDragon] = setting->GetSplashSetting(Splash::kExplosion);
 
-				const auto startPos = a_explosion->GetPosition();
-				const RE::NiPoint3 pos{ startPos.x, startPos.y, util::get_water_height(a_explosion, startPos) };
+				const auto startPos = explosion->GetPosition();
+				const RE::NiPoint3 pos{ startPos.x, startPos.y, util::get_water_height(explosion, startPos) };
 
 				const auto type = util::get_effect_type(root);
 				if (!fireOnly || type == Splash::kCone || type == Splash::kFlame) {
@@ -347,7 +349,7 @@ private:
 						time = 1.0f;
 					}
 
-					const auto scale = a_explosion->radius / setting->GetExplosionSplashRadius();
+					const auto scale = explosion->radius / setting->GetExplosionSplashRadius();
 
 					RE::NiMatrix3 matrix{};
 					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, stl::RNG::GetSingleton()->Generate<float>(-RE::NI_PI, RE::NI_PI));
@@ -369,6 +371,8 @@ private:
 
 				util::create_ripple(pos, displacementMult);
 			}
+
+			return result;
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
 	};

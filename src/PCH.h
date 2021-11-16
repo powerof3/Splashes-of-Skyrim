@@ -22,6 +22,7 @@ namespace stl
 	using SKSE::stl::is_in;
 	using SKSE::stl::RNG;
 	using SKSE::stl::to_underlying;
+	using SKSE::stl::adjust_pointer;
 
 	template <class T>
 	void write_thunk_call(std::uintptr_t a_src)
