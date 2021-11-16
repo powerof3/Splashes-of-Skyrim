@@ -9,7 +9,7 @@ struct util
 	{
 		return (string::icontains(first, t) || ...);
 	}
-	
+
 	static std::uint32_t get_effect_type(const RE::NiAVObject* a_object)
 	{
 		static auto constexpr Fire{ "fire"sv };
@@ -30,10 +30,10 @@ struct util
 	{
 		float waterHeight = -RE::NI_INFINITY;
 
-		const auto waterManager = RE::BGSWaterSystemManager::GetSingleton(); 
+		const auto waterManager = RE::BGSWaterSystemManager::GetSingleton();
 		if (waterManager && waterManager->enabled) {
 			waterHeight = a_ref->GetWaterHeight();
-			
+
 			if (!numeric::essentially_equal(waterHeight, -RE::NI_INFINITY)) {
 				return waterHeight;
 			}
@@ -391,7 +391,6 @@ private:
 	{
 		static std::uint32_t thunk(RE::BSAudioManager* a_manager, RE::NiAVObject* a_object, RE::NiAVObject* a_object2)
 		{
-			logger::info("{} : [{}, {}]", a_object->GetUserData() ? a_object->GetUserData()->GetName() : "none owner", a_object->name, a_object2->name);
 			return func(a_manager, a_object, a_object2);
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
