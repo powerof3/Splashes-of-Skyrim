@@ -17,10 +17,8 @@ extern "C" __declspec(dllexport) constexpr auto SKSEPlugin_Version = []() {
 	return v;
 }();
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+bool InitLogger()
 {
-	logger::info("loaded plugin");
-
 	auto path = logger::log_directory();
 	if (!path) {
 		return false;
@@ -38,7 +36,18 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	spdlog::set_pattern("[%l] %v"s);
 
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
-	
+
+	return true;
+}
+
+extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+{
+	if (!InitLogger()) {
+		return false;
+	}
+
+	logger::info("loaded plugin");
+
 	SKSE::Init(a_skse);
 	SKSE::AllocTrampoline(48);
 
