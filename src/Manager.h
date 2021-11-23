@@ -30,7 +30,7 @@ struct util
 	{
 		float waterHeight = -RE::NI_INFINITY;
 
-		const auto waterManager = RE::BGSWaterSystemManager::GetSingleton();
+		const auto waterManager = RE::TESWaterSystem::GetSingleton();
 		if (waterManager && waterManager->enabled) {
 			waterHeight = a_ref->GetWaterHeight();
 
@@ -91,11 +91,11 @@ struct util
 
 		if (!a_skipQueue || RE::TaskQueueInterface::ShouldUseTaskQueue()) {
 			if (const auto taskPool = RE::TaskQueueInterface::GetSingleton(); taskPool) {
-				taskPool->QueueBulletWaterDisplacementTask(displacement, a_pos);
+				taskPool->QueueAddRipple(displacement, a_pos);
 			}
 		} else {
-			if (const auto waterManager = RE::BGSWaterSystemManager::GetSingleton(); waterManager) {
-				waterManager->CreateBulletWaterDisplacement(a_pos, displacement);
+			if (const auto waterManager = RE::TESWaterSystem::GetSingleton(); waterManager) {
+				waterManager->AddRipple(a_pos, displacement);
 			}
 		}
 	}
@@ -283,7 +283,7 @@ void ProjectileManager<T, type>::Install()
 
 	//disabling cone water splash
 	if constexpr (type == Splash::kCone) {
-		REL::Relocation<std::uintptr_t> target{ REL::Offset(0x762020) };
+		REL::Relocation<std::uintptr_t> target{ REL::ID(43806) };
 		REL::safe_write(target.address() + 0x3B7, std::uint8_t{ 0xEB });
 	}
 
@@ -301,7 +301,7 @@ public:
 			return;
 		}
 
-		REL::Relocation<std::uintptr_t> target{ REL::Offset(0x768200) };
+		REL::Relocation<std::uintptr_t> target{ REL::ID(43869) };
 		stl::write_thunk_call<IsSoundHandleValid>(target.address() + 0x528);
 
 		//skip vanilla explosion particle spawn (waste of emptyFX)
