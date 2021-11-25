@@ -130,7 +130,7 @@ private:
 			auto [enableSplash, enableRipple, displacementMult, modelPath, modelPathFire, modelPathDragon] = setting->GetSplashSetting(type);
 
 			if (enableSplash) {
-				const auto rng = stl::RNG::GetSingleton();
+				const auto rng = ::stl::RNG::GetSingleton();
 
 				bool result = true;
 				if constexpr (type == Splash::kFlame || type == Splash::kArrow) {
@@ -230,7 +230,7 @@ private:
 						return;
 					}
 
-					if (auto material = data->material; material && stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
+					if (auto material = data->material; material && ::stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
 						return;
 					}
 
@@ -253,7 +253,7 @@ private:
 					}
 				} else {
 					if (const auto data = !a_projectile->impacts.empty() ? a_projectile->impacts.front() : nullptr; data) {
-						if (const auto material = data->material; material && stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
+						if (const auto material = data->material; material && ::stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
 							return;
 						}
 					}
@@ -279,7 +279,7 @@ void ProjectileManager<T, type>::Install()
 		return;
 	}
 
-	stl::write_vfunc<T, ProcessInWater>(0x0AB);
+	::stl::write_vfunc<T, ProcessInWater>(0x0AB);
 
 	//disabling cone water splash
 	if constexpr (type == Splash::kCone) {
@@ -302,7 +302,7 @@ public:
 		}
 
 		REL::Relocation<std::uintptr_t> target{ REL::ID(42696) };
-		stl::write_thunk_call<UpdateSound>(target.address() + 0x33C);
+		::stl::write_thunk_call<UpdateSound>(target.address() + 0x33C);
 
 		//skip vanilla explosion particle spawn (waste of emptyFX)
 		constexpr std::uint8_t JMP[] = { 0x90, 0xE9 };
@@ -350,7 +350,7 @@ private:
 					const auto scale = a_explosion->radius / setting->GetExplosionSplashRadius();
 
 					RE::NiMatrix3 matrix{};
-					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, stl::RNG::GetSingleton()->Generate<float>(-RE::NI_PI, RE::NI_PI));
+					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, ::stl::RNG::GetSingleton()->Generate<float>(-RE::NI_PI, RE::NI_PI));
 
 					if (const auto effect = cell->PlaceParticleEffect(time, modelName, matrix, pos, scale, 7, nullptr); effect) {
 						RE::BSSoundHandle soundHandle{};
@@ -380,8 +380,7 @@ class RainManager
 public:
 	static void Install()
 	{
-		REL::Relocation<std::uintptr_t> target{ REL::ID(39401), 0x202 };
-		stl::write_thunk_call<ToggleWaterRipples>(target.address());
+		::stl::write_thunk_call<ToggleWaterRipples>(target.address());
 
 		logger::info("installed rain manager");
 	}
