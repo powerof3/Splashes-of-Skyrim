@@ -380,6 +380,13 @@ class RainManager
 public:
 	static void Install()
 	{
+		REL::Relocation<std::uintptr_t> target{ REL::ID(39401),
+#ifndef SKYRIMVR
+			0x202
+#else
+			0x1ea
+#endif
+		};
 		::stl::write_thunk_call<ToggleWaterRipples>(target.address());
 
 		logger::info("installed rain manager");
