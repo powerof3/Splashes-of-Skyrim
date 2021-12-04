@@ -113,7 +113,7 @@ namespace Splash
 			splashScales.push_back(value);
 		}
 
-		for (auto i = stl::to_underlying(kMissile); i < stl::to_underlying(kExplosion); i++) {
+		for (auto i = ::stl::to_underlying(kMissile); i < ::stl::to_underlying(kExplosion); i++) {
 			auto [name, defMult] = GetType(i);
 
 			Setting setting;
