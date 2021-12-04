@@ -30,7 +30,7 @@ struct util
 	{
 		float waterHeight = -RE::NI_INFINITY;
 
-		const auto waterManager = RE::BGSWaterSystemManager::GetSingleton();
+		const auto waterManager = RE::TESWaterSystem::GetSingleton();
 		if (waterManager && waterManager->enabled) {
 			waterHeight = a_ref->GetWaterHeight();
 
@@ -91,11 +91,11 @@ struct util
 
 		if (!a_skipQueue || RE::TaskQueueInterface::ShouldUseTaskQueue()) {
 			if (const auto taskPool = RE::TaskQueueInterface::GetSingleton(); taskPool) {
-				taskPool->QueueBulletWaterDisplacementTask(displacement, a_pos);
+				taskPool->QueueAddRipple(displacement, a_pos);
 			}
 		} else {
-			if (const auto waterManager = RE::BGSWaterSystemManager::GetSingleton(); waterManager) {
-				waterManager->CreateBulletWaterDisplacement(a_pos, displacement);
+			if (const auto waterManager = RE::TESWaterSystem::GetSingleton(); waterManager) {
+				waterManager->AddRipple(a_pos, displacement);
 			}
 		}
 	}
