@@ -19,14 +19,13 @@ using namespace std::literals;
 
 namespace stl
 {
-	using SKSE::stl::is_in;
-	using SKSE::stl::RNG;
-	using SKSE::stl::to_underlying;
+	using namespace SKSE::stl;
 
 	template <class T>
 	void write_thunk_call(std::uintptr_t a_src)
 	{
 		auto& trampoline = SKSE::GetTrampoline();
+		SKSE::AllocTrampoline(14);
 		T::func = trampoline.write_call<5>(a_src, T::thunk);
 	}
 
@@ -37,5 +36,11 @@ namespace stl
 		T::func = vtbl.write_vfunc(a_size, T::thunk);
 	}
 }
+
+#ifdef SKYRIM_AE
+#	define OFFSET(se, ae) ae
+#else
+#	define OFFSET(se, ae) se
+#endif
 
 #include "Version.h"

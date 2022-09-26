@@ -1,18 +1,58 @@
 #include "Manager.h"
-#include "Settings.h"
 
 void OnInit(SKSE::MessagingInterface::Message* a_msg)
 {
-	if (a_msg->type == SKSE::MessagingInterface::kDataLoaded) {
-		DisplacementManager::Install();
+	switch (a_msg->type) {
+	case SKSE::MessagingInterface::kPostLoad:
+		Splashes::InstallOnPostLoad();
+		break;
+	case SKSE::MessagingInterface::kDataLoaded:
+		Splashes::InstallOnDataLoad();
+		break;
+	default:
+		break;
 	}
 }
 
+#ifdef SKYRIM_AE
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
+	SKSE::PluginVersionData v;
+	v.PluginVersion(Version::MAJOR);
+	v.PluginName("Splashes of Skyrim");
+	v.AuthorName("powerofthree");
+	v.UsesAddressLibrary();
+	v.UsesUpdatedStructs();
+	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
+
+	return v;
+}();
+#else
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+{
+	a_info->infoVersion = SKSE::PluginInfo::kVersion;
+	a_info->name = "Splashes of Skyrim";
+	a_info->version = Version::MAJOR;
+
+	if (a_skse->IsEditor()) {
+		logger::critical("Loaded in editor, marking as incompatible"sv);
+		return false;
+	}
+
+	const auto ver = a_skse->RuntimeVersion();
+	if (ver < SKSE::RUNTIME_1_5_39) {
+		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+void InitializeLog()
 {
 	auto path = logger::log_directory();
 	if (!path) {
-		return false;
+		stl::report_and_fail("Failed to find standard logging directory"sv);
 	}
 
 	*path /= fmt::format(FMT_STRING("{}.log"), Version::PROJECT);
@@ -27,49 +67,18 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 	spdlog::set_pattern("[%l] %v"s);
 
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
-
-	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = "Splashes Of Skyrim";
-	a_info->version = Version::MAJOR;
-
-	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
-		return false;
-	}
-
-	const auto ver = a_skse->RuntimeVersion();
-	if (ver <
-#ifndef SKYRIMVR
-		SKSE::RUNTIME_1_5_39
-#else
-		SKSE::RUNTIME_VR_1_4_15
-#endif
-	) {
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-		return false;
-	}
-
-	return true;
 }
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-	logger::info("loaded plugin");
+	InitializeLog();
+
+	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 
 	SKSE::Init(a_skse);
-	SKSE::AllocTrampoline(48);
 
-	Splash::Settings::GetSingleton()->LoadSettings();
-
-	ProjectileManager<RE::MissileProjectile, Splash::kMissile>::Install();
-	ProjectileManager<RE::FlameProjectile, Splash::kFlame>::Install();
-	ProjectileManager<RE::ConeProjectile, Splash::kCone>::Install();
-	ProjectileManager<RE::ArrowProjectile, Splash::kArrow>::Install();
-
-	ExplosionManager::Install();
-
-	const auto messaging = SKSE::GetMessagingInterface();
-	messaging->RegisterListener(OnInit);
+	auto messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener("SKSE", OnInit);
 
 	return true;
 }

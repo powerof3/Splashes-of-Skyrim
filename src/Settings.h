@@ -1,56 +1,122 @@
 #pragma once
 
-namespace Splash
+namespace Splashes
 {
 	enum TYPE : std::uint32_t
 	{
 		kMissile = 0,
-		kFlame = 1,
-		kCone = 2,
-		kArrow = 3,
-		kExplosion = 4,
-
-		kTotal = 5
+		kFlame,
+		kCone,
+		kArrow,
+		kBeam,
+		kExplosion,
 	};
 
 	enum SIZE : std::uint32_t
 	{
 		kHeavy = 0,
-		kMedium = 1,
-		kLight = 2
+		kMedium,
+		kLight
 	};
+
+	struct Base
+	{
+		Base(std::string_view a_type, float a_displacementMult);
+
+		std::string type{};
+
+		float displacementMult{};
+
+		std::string modelPath{};
+		std::string modelPathFire{};
+		std::string modelPathDragon{};
+	};
+
+	struct Projectile : Base
+	{
+		Projectile(std::string_view a_type, float a_displacementMult);
+
+		void LoadSettings(CSimpleIniA& a_ini, bool a_writeComment = false);
+
+		bool enableSplash{ true };
+		bool enableRipple{ true };
+	};
+
+	struct Explosion : Base
+	{
+		Explosion(std::string_view a_type, float a_displacementMult);
+
+		void LoadSettings(CSimpleIniA& a_ini);
+
+		bool enable{ true };
+		bool fireOnly{ true };
+		float splashRadius{ 250.0f };
+	};
+
+	namespace INI
+	{
+		template <class T>
+		void get_value(CSimpleIniA& a_ini, T& a_value, const char* a_section, const char* a_key, const char* a_comment)
+		{
+			if constexpr (std::is_same_v<bool, T>) {
+				a_value = a_ini.GetBoolValue(a_section, a_key, a_value);
+				a_ini.SetBoolValue(a_section, a_key, a_value, a_comment);
+			} else if constexpr (std::is_floating_point_v<T>) {
+				a_value = static_cast<T>(a_ini.GetDoubleValue(a_section, a_key, a_value));
+				a_ini.SetDoubleValue(a_section, a_key, a_value, a_comment);
+			} else if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
+				a_value = string::lexical_cast<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
+				a_ini.SetValue(a_section, a_key, std::to_string(a_value).c_str(), a_comment);
+			} else {
+				a_value = a_ini.GetValue(a_section, a_key, a_value.c_str());
+				a_ini.SetValue(a_section, a_key, a_value.c_str(), a_comment);
+			}
+		}
+	}
 
 	class Settings
 	{
 	public:
-		using Setting = std::tuple<bool, bool, float, std::string, std::string, std::string>;
-
 		static Settings* GetSingleton();
 
-		void LoadSettings();
+		[[nodiscard]] float GetSplashRadius(SIZE a_size) const;
+		[[nodiscard]] float GetSplashScale(SIZE a_size) const;
 
-		float GetSplashRadius(SIZE a_size) const;
-		float GetSplashScale(SIZE a_size) const;
-		Setting GetSplashSetting(TYPE a_type) const;
-		std::pair<bool, bool> GetInstallSetting(TYPE a_type) const;
+		[[nodiscard]] const Projectile* GetProjectileSetting(TYPE a_type) const;
+		[[nodiscard]] const Explosion* GetExplosion() const;
 
-		bool GetPatchDisplacement() const;
-		bool GetAllowDamageWater() const;
+		[[nodiscard]] std::pair<bool, bool> GetInstalled(TYPE a_type) const;
+
+		[[nodiscard]] bool GetPatchDisplacement() const;
+		[[nodiscard]] bool GetAllowDamageWater() const;
 
 		[[nodiscard]] float GetExplosionSplashRadius() const;
 
 	private:
-		static std::tuple<std::string, float> GetType(std::uint32_t a_type);
-		static std::pair<std::string, float> GetSize(std::uint32_t a_size);
+		Settings();
 
-		bool patchDisplacement{ false };
+		void LoadSettings();
+
+		bool patchDisplacement{ true };
 		bool allowDamageWater{ false };
 
-		std::vector<float> splashRadii;
-		std::vector<float> splashScales;
+		Projectile missile{ "Missile"sv, 1.0f };
+		Projectile flame{ "Flame"sv, 1.0f };
+		Projectile cone{ "Cone"sv, 10.0f };
+		Projectile arrow{ "Arrow"sv, 1.0f };
+		Projectile beam{ "Beam"sv, 1.0f };
+		Explosion explosion{ "Explosion", 5.0f };
 
-		std::vector<Setting> splashSettings;
+		std::map<SIZE, float> splashRadii{
+			{ kHeavy, 35.0f },
+			{ kMedium, 20.0f },
+			{ kLight, 5.0f }
+		};
 
-		float explosionSplashRadius{ 0.0 };
+		std::map<SIZE, float> splashScales{
+			{ kHeavy, 1.0f },
+			{ kMedium, 0.75f },
+			{ kLight, 0.5f }
+		};
 	};
 }
