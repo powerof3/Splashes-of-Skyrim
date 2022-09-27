@@ -104,7 +104,7 @@ namespace Splashes
 		Projectile flame{ "Flame"sv, 1.0f };
 		Projectile cone{ "Cone"sv, 10.0f };
 		Projectile arrow{ "Arrow"sv, 1.0f };
-		Projectile beam{ "Beam"sv, 1.0f };
+		Projectile beam{ "Beam"sv, 0.4f };
 		Explosion explosion{ "Explosion", 5.0f };
 
 		std::map<SIZE, float> splashRadii{
