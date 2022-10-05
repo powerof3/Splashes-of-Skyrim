@@ -349,7 +349,7 @@ namespace Splashes
 			{
 				auto result = func(a_handle);
 
-				const auto explosion = stl::adjust_pointer<RE::Explosion>(&a_handle, -0xD0);
+				const auto explosion = stl::adjust_pointer<RE::Explosion>(&a_handle, -0xD8);
 				const auto cell = explosion ? explosion->GetParentCell() : nullptr;
 				const auto root = cell && explosion->flags.any(RE::Explosion::Flags::kInWater) ? explosion->Get3D() : nullptr;
 
