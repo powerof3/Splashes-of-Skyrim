@@ -124,18 +124,19 @@ namespace Splashes
 							endPos = data->desiredTargetLoc;
 						} else {
 							if (const auto data = !a_projectile->impacts.empty() ? a_projectile->impacts.front() : nullptr) {
-								return;
+								endPos = data->desiredTargetLoc;
+							} else {
+								const auto root = a_projectile->Get3D();
+								if (!root) {
+									return;
+								}
+								static constexpr auto beamEndStr{ "BeamEnd" };
+								const auto beamEnd = root->GetObjectByName(beamEndStr);
+								if (!beamEnd) {
+									return;
+								}
+								endPos = beamEnd->world.translate;
 							}
-							const auto root = a_projectile->Get3D();
-							if (!root) {
-								return;
-							}
-							static constexpr auto beamEndStr{ "BeamEnd" };
-							const auto beamEnd = root->GetObjectByName(beamEndStr);
-							if (!beamEnd) {
-								return;
-							}
-							endPos = beamEnd->world.translate;
 						}
 						const auto waterHeight = util::get_water_height(a_projectile, endPos);
 						if (!numeric::approximately_equal(endPos.z, startPos.z)) {
@@ -184,94 +185,85 @@ namespace Splashes
 				const auto projectile = setting->GetProjectileSetting(type);
 
 				if (projectile->enableSplash) {
-					const auto rng = stl::RNG::GetSingleton();
+					const float radius = root->worldBound.radius;
+					if (const auto cell = radius > 0.0f ?
+					                          a_projectile->GetParentCell() :
+					                          nullptr;
+						cell) {
+						float scale = 1.0f;
 
-					bool result = true;
-					if constexpr (type == kFlame) {
-						if (rng->Generate<std::uint32_t>(0, 2) != 0) {
-							result = false;
-						}
-					}
+						if constexpr (type != kBeam) {
+							const auto heavyRadius = setting->GetSplashRadius(kHeavy);
+							const auto mediumRadius = setting->GetSplashRadius(kMedium);
+							const auto lightRadius = setting->GetSplashRadius(kLight);
 
-					if (result) {
-						const float radius = root->worldBound.radius;
-						if (const auto cell = radius > 0.0f ?
-						                          a_projectile->GetParentCell() :
-						                          nullptr;
-							cell) {
-							float scale = 1.0f;
-
-							if constexpr (type != kBeam) {
-								const auto heavyRadius = setting->GetSplashRadius(kHeavy);
-								const auto mediumRadius = setting->GetSplashRadius(kMedium);
-								const auto lightRadius = setting->GetSplashRadius(kLight);
-
-								if (radius <= heavyRadius) {
-									if (radius <= mediumRadius) {
-										if (radius > lightRadius) {
-											scale = setting->GetSplashScale(kLight);
-										}
-									} else {
-										scale = setting->GetSplashScale(kMedium);
+							if (radius <= heavyRadius) {
+								if (radius <= mediumRadius) {
+									if (radius > lightRadius) {
+										scale = setting->GetSplashScale(kLight);
 									}
 								} else {
-									scale = setting->GetSplashScale(kHeavy);
+									scale = setting->GetSplashScale(kMedium);
 								}
+							} else {
+								scale = setting->GetSplashScale(kHeavy);
+							}
 
-								if constexpr (type == kMissile) {
-									RE::BSSoundHandle soundHandle{};
+							if constexpr (type == kMissile) {
+								RE::BSSoundHandle soundHandle{};
 
-									if (const auto audioManager = RE::BSAudioManager::GetSingleton(); audioManager) {
-										if (radius <= heavyRadius) {
-											if (radius <= mediumRadius) {
-												if (radius > lightRadius) {
-													static constexpr auto smallSound{ "CWaterSmall" };
-													audioManager->BuildSoundDataFromEditorID(soundHandle, smallSound, 17);
-												}
-											} else {
-												static constexpr auto mediumSound{ "CWaterMedium" };
-												audioManager->BuildSoundDataFromEditorID(soundHandle, mediumSound, 17);
+								if (const auto audioManager = RE::BSAudioManager::GetSingleton(); audioManager) {
+									if (radius <= heavyRadius) {
+										if (radius <= mediumRadius) {
+											if (radius > lightRadius) {
+												static constexpr auto smallSound{ "CWaterSmall" };
+												audioManager->BuildSoundDataFromEditorID(soundHandle, smallSound, 17);
 											}
 										} else {
-											static constexpr auto largeSound{ "CWaterLarge" };
-											audioManager->BuildSoundDataFromEditorID(soundHandle, largeSound, 17);
+											static constexpr auto mediumSound{ "CWaterMedium" };
+											audioManager->BuildSoundDataFromEditorID(soundHandle, mediumSound, 17);
 										}
-										if (soundHandle.IsValid()) {
-											soundHandle.SetPosition(a_pos);
-											soundHandle.Play();
-										}
+									} else {
+										static constexpr auto largeSound{ "CWaterLarge" };
+										audioManager->BuildSoundDataFromEditorID(soundHandle, largeSound, 17);
+									}
+									if (soundHandle.IsValid()) {
+										soundHandle.SetPosition(a_pos);
+										soundHandle.Play();
 									}
 								}
 							}
+						}
 
-							RE::NiMatrix3 matrix{};
-							matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, rng->Generate<float>(-RE::NI_PI, RE::NI_PI));
+						const auto rng = stl::RNG::GetSingleton();
 
-							std::string modelName;
-							float time;
+						RE::NiMatrix3 matrix{};
+						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, rng->Generate<float>(-RE::NI_PI, RE::NI_PI));
 
-							if constexpr (type == kMissile || type == kCone || type == kFlame) {
-								switch (util::get_fire_type(root)) {
-								case FIRE_TYPE::kDragon:
-									modelName = projectile->modelPathDragon;
-									time = 2.0f;
-									break;
-								case FIRE_TYPE::kFire:
-									modelName = projectile->modelPathFire;
-									time = 1.0f;
-									break;
-								default:
-									modelName = projectile->modelPath;
-									time = 1.0f;
-									break;
-								}
-							} else {
+						std::string modelName;
+						float time;
+
+						if constexpr (type == kMissile || type == kCone || type == kFlame) {
+							switch (util::get_fire_type(root)) {
+							case FIRE_TYPE::kDragon:
+								modelName = projectile->modelPathDragon;
+								time = 2.0f;
+								break;
+							case FIRE_TYPE::kFire:
+								modelName = projectile->modelPathFire;
+								time = 1.0f;
+								break;
+							default:
 								modelName = projectile->modelPath;
 								time = 1.0f;
+								break;
 							}
-
-							RE::BSTempEffectParticle::Spawn(cell, time, modelName.c_str(), matrix, a_pos, scale, 7, nullptr);
+						} else {
+							modelName = projectile->modelPath;
+							time = 1.0f;
 						}
+
+						RE::BSTempEffectParticle::Spawn(cell, time, modelName.c_str(), matrix, a_pos, scale, 7, nullptr);
 					}
 				}
 
