@@ -434,7 +434,7 @@ namespace Splashes
 			std::uint32_t count = 0;
 			const auto dataHandler = RE::TESDataHandler::GetSingleton();
 			for (const auto& activator : dataHandler->GetFormArray<RE::TESObjectACTI>()) {
-				if (activator && activator->IsWater()) {
+				if (activator && activator->IsWater() && !activator->QHasCurrents() && !activator->GetRandomAnim()) {
 					activator->flags.reset(Flag::kNoDisplacement);
 					count++;
 				}
