@@ -28,7 +28,7 @@ namespace Splashes
 		std::string modelPath{};
 		std::string modelPathFire{};
 		std::string modelPathDragon{};
-		float displacementMult{};
+		float       displacementMult{};
 	};
 
 	struct Projectile : Base
@@ -49,8 +49,8 @@ namespace Splashes
 		void LoadSettings(CSimpleIniA& a_ini);
 
 		// members
-		bool enable{ true };
-		bool fireOnly{ true };
+		bool  enable{ true };
+		bool  fireOnly{ true };
 		float splashRadius{ 250.0f };
 	};
 
@@ -63,7 +63,7 @@ namespace Splashes
 		[[nodiscard]] float GetSplashScale(SIZE a_size) const;
 
 		[[nodiscard]] const Projectile* GetProjectileSetting(TYPE a_type) const;
-		[[nodiscard]] const Explosion* GetExplosion() const;
+		[[nodiscard]] const Explosion*  GetExplosion() const;
 
 		[[nodiscard]] std::pair<bool, bool> GetInstalled(TYPE a_type) const;
 
@@ -73,6 +73,7 @@ namespace Splashes
 		[[nodiscard]] float GetExplosionSplashRadius() const;
 
 	private:
+		// members
 		bool patchDisplacement{ true };
 		bool allowDamageWater{ false };
 
@@ -81,7 +82,7 @@ namespace Splashes
 		Projectile cone{ "Cone"sv, 10.0f };
 		Projectile arrow{ "Arrow"sv, 1.0f };
 		Projectile beam{ "Beam"sv, 0.4f };
-		Explosion explosion{ "Explosion", 5.0f };
+		Explosion  explosion{ "Explosion", 5.0f };
 
 		std::map<SIZE, float> splashRadii{
 			{ kHeavy, 35.0f },

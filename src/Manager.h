@@ -13,87 +13,10 @@ namespace Splashes
 
 	struct util
 	{
-		static FIRE_TYPE get_fire_type(const RE::NiAVObject* a_object)
-		{
-			static auto constexpr Fire{ "fire"sv };
-			static auto constexpr Flame{ "flame"sv };
-			static auto constexpr Dragon{ "dragon"sv };
-
-			if (string::icontains(a_object->name, Fire) || string::icontains(a_object->name, Flame)) {
-				if (string::icontains(a_object->name, Dragon)) {
-					return FIRE_TYPE::kDragon;
-				}
-				return FIRE_TYPE::kFire;
-			}
-			return FIRE_TYPE::kNone;
-		}
-
-		static float get_water_height(const RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_pos)
-		{
-			float waterHeight = -RE::NI_INFINITY;
-
-			if (const auto waterManager = RE::TESWaterSystem::GetSingleton()) {
-				waterHeight = a_ref->GetWaterHeight();
-
-				if (!numeric::essentially_equal(waterHeight, -RE::NI_INFINITY)) {
-					return waterHeight;
-				}
-
-				const auto get_nearest_water_object_height = [&]() {
-					const auto settings = Settings::GetSingleton();
-					for (const auto& waterObject : waterManager->waterObjects) {
-						if (waterObject) {
-							if (!settings->GetAllowDamageWater()) {
-								if (const auto waterForm = waterObject->waterType; waterForm && waterForm->GetDangerous()) {
-									continue;
-								}
-							}
-							for (const auto& bound : waterObject->multiBounds) {
-								if (bound) {
-									if (auto size{ bound->size }; size.z <= 10.0f) {  //avoid sloped water
-										auto center{ bound->center };
-										const auto boundMin = center - size;
-										const auto boundMax = center + size;
-										if (!(a_pos.x < boundMin.x || a_pos.x > boundMax.x || a_pos.y < boundMin.y || a_pos.y > boundMax.y)) {
-											return center.z;
-										}
-									}
-								}
-							}
-						}
-					}
-
-					return -RE::NI_INFINITY;
-				};
-
-				waterHeight = get_nearest_water_object_height();
-			}
-
-			return waterHeight;
-		}
-
-		static std::pair<float, float> get_submerged_water_level(const RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_pos)
-		{
-			auto waterHeight = get_water_height(a_ref, a_pos);
-
-			if (numeric::approximately_equal(waterHeight, -RE::NI_INFINITY) || waterHeight <= a_pos.z) {
-				return std::make_pair(waterHeight, 0.0f);
-			}
-
-			auto level = (waterHeight - a_pos.z) / a_ref->GetHeight();
-			return std::make_pair(waterHeight, level <= 1.0f ?
-												   level :
-												   1.0f);
-		}
-
-		static void create_ripple(const RE::NiPoint3& a_pos, float a_displacementMult)
-		{
-			const auto displacement = 0.0099999998f * a_displacementMult;
-
-			if (const auto taskPool = RE::TaskQueueInterface::GetSingleton()) {
-				taskPool->QueueAddRipple(displacement, a_pos);
-			}
-		}
+		static FIRE_TYPE               get_fire_type(const RE::NiAVObject* a_object);
+		static float                   get_water_height(const RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_pos);
+		static std::pair<float, float> get_submerged_water_level(const RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_pos);
+		static void                    create_ripple(const RE::NiPoint3& a_pos, float a_displacementMult);
 	};
 
 	template <class T, TYPE type>
@@ -130,8 +53,7 @@ namespace Splashes
 								if (!root) {
 									return;
 								}
-								static constexpr auto beamEndStr{ "BeamEnd" };
-								const auto beamEnd = root->GetObjectByName(beamEndStr);
+								const auto beamEnd = root->GetObjectByName("BeamEnd");
 								if (!beamEnd) {
 									return;
 								}
@@ -173,7 +95,6 @@ namespace Splashes
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 
-		private:
 			static void create_splash(const T* a_projectile, const RE::NiPoint3& a_pos)
 			{
 				const auto root = a_projectile->Get3D();
@@ -216,16 +137,13 @@ namespace Splashes
 									if (radius <= heavyRadius) {
 										if (radius <= mediumRadius) {
 											if (radius > lightRadius) {
-												static constexpr auto smallSound{ "CWaterSmall" };
-												audioManager->BuildSoundDataFromEditorID(soundHandle, smallSound, 17);
+												audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterSmall", 17);
 											}
 										} else {
-											static constexpr auto mediumSound{ "CWaterMedium" };
-											audioManager->BuildSoundDataFromEditorID(soundHandle, mediumSound, 17);
+											audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterMedium", 17);
 										}
 									} else {
-										static constexpr auto largeSound{ "CWaterLarge" };
-										audioManager->BuildSoundDataFromEditorID(soundHandle, largeSound, 17);
+										audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterLarge", 17);
 									}
 									if (soundHandle.IsValid()) {
 										soundHandle.SetPosition(a_pos);
@@ -239,7 +157,7 @@ namespace Splashes
 						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
 
 						std::string modelName;
-						float time;
+						float       time;
 
 						if constexpr (type == kMissile || type == kCone || type == kFlame) {
 							switch (util::get_fire_type(root)) {
@@ -270,15 +188,6 @@ namespace Splashes
 				}
 			}
 		};
-
-		ProjectileManager() = delete;
-		ProjectileManager(const ProjectileManager&) = delete;
-		ProjectileManager(ProjectileManager&&) = delete;
-
-		~ProjectileManager() = delete;
-
-		ProjectileManager& operator=(const ProjectileManager&) = delete;
-		ProjectileManager& operator=(ProjectileManager&&) = delete;
 	};
 
 	template <class T, TYPE type>
@@ -368,7 +277,7 @@ namespace Splashes
 					return;
 				}
 
-				const auto startPos = a_explosion->GetPosition();
+				const auto         startPos = a_explosion->GetPosition();
 				const RE::NiPoint3 pos{ startPos.x, startPos.y, util::get_water_height(a_explosion, startPos) };
 
 				const auto type = util::get_fire_type(a_root);
@@ -376,7 +285,7 @@ namespace Splashes
 					a_root->SetAppCulled(true);
 
 					std::string modelName;
-					float time;
+					float       time;
 
 					switch (type) {
 					case FIRE_TYPE::kDragon:
@@ -397,12 +306,11 @@ namespace Splashes
 					RE::NiMatrix3 matrix{};
 					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
 
-					if (const auto effect = RE::BSTempEffectParticle::Spawn(a_cell, time, modelName.c_str(), matrix, pos, scale, 7, nullptr); effect) {
+					if (const auto effect = RE::BSTempEffectParticle::Spawn(a_cell, time, modelName.c_str(), matrix, pos, scale, 7, nullptr)) {
 						RE::BSSoundHandle soundHandle{};
 
 						if (const auto audioManager = RE::BSAudioManager::GetSingleton()) {
-							static constexpr auto explosionSound{ "CWaterExplosionSplash" };
-							audioManager->BuildSoundDataFromEditorID(soundHandle, explosionSound, 17);
+							audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterExplosionSplash", 17);
 						}
 
 						if (soundHandle.IsValid()) {
@@ -413,35 +321,6 @@ namespace Splashes
 				}
 
 				util::create_ripple(pos, explosionSetting->displacementMult);
-			}
-		}
-	};
-
-	class DisplacementManager
-	{
-	public:
-		static void Install()
-		{
-			const auto settings = Settings::GetSingleton();
-			if (!settings->GetPatchDisplacement()) {
-				return;
-			}
-
-			using Flag = RE::TESObjectACTI::ActiFlags;
-
-			std::uint32_t count = 0;
-			const auto dataHandler = RE::TESDataHandler::GetSingleton();
-			for (const auto& activator : dataHandler->GetFormArray<RE::TESObjectACTI>()) {
-				if (activator && activator->IsWater() && !activator->QHasCurrents() && !activator->GetRandomAnim()) {
-					activator->flags.reset(Flag::kNoDisplacement);
-					count++;
-				}
-			}
-
-			logger::info("Patching {} water records to use displacement", count);
-
-			if (const auto setting = RE::GetINISetting("bUseBulletWaterDisplacements")) {
-				setting->data.b = true;
 			}
 		}
 	};
