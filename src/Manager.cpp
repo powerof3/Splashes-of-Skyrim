@@ -4,6 +4,8 @@ namespace Splashes
 {
     void InstallOnPostLoad()
     {
+		Settings::GetSingleton()->LoadSettings();
+		
 		ProjectileManager<RE::MissileProjectile, kMissile>::Install();
 		ProjectileManager<RE::FlameProjectile, kFlame>::Install();
 		ProjectileManager<RE::ConeProjectile, kCone>::Install();

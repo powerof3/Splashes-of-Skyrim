@@ -118,7 +118,7 @@ namespace Splashes
 							if (!data) {
 								return;
 							}
-							if (auto material = data->material; material && stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
+							if (auto material = data->material; material && (material->materialID == RE::MATERIAL_ID::kWater || material->materialID == RE::MATERIAL_ID::kWaterPuddle)) {
 								return;
 							}
 							endPos = data->desiredTargetLoc;
@@ -148,9 +148,9 @@ namespace Splashes
 							const auto level = (waterHeight - endPos.z) / a_projectile->GetHeight();
 							if (level >= 0.1f) {
 								if constexpr (type == kBeam) {  // beam isn't focused when hitting water
-									const auto rng = stl::RNG::GetSingleton();
-									endPos.x += rng->Generate(-20.0f, 20.0f);
-									endPos.y += rng->Generate(-20.0f, 20.0f);
+									auto rng = clib_util::RNG();
+									endPos.x += rng.generate<float>(-20.0f, 20.0f);
+									endPos.y += rng.generate<float>(-20.0f, 20.0f);
 								}
 								endPos.z = waterHeight;
 								create_splash(a_projectile, endPos);
@@ -158,7 +158,7 @@ namespace Splashes
 						}
 					} else {
 						if (const auto data = !a_projectile->impacts.empty() ? a_projectile->impacts.front() : nullptr; data) {
-							if (const auto material = data->material; material && stl::is_in(material->materialID, RE::MATERIAL_ID::kWater, RE::MATERIAL_ID::kWaterPuddle)) {
+							if (const auto material = data->material; material && (material->materialID == RE::MATERIAL_ID::kWater || material->materialID == RE::MATERIAL_ID::kWaterPuddle)) {
 								return;
 							}
 						}
@@ -235,10 +235,8 @@ namespace Splashes
 							}
 						}
 
-						const auto rng = stl::RNG::GetSingleton();
-
 						RE::NiMatrix3 matrix{};
-						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, rng->Generate<float>(-RE::NI_PI, RE::NI_PI));
+						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
 
 						std::string modelName;
 						float time;
@@ -397,7 +395,7 @@ namespace Splashes
 					const auto scale = a_explosion->radius / setting->GetExplosionSplashRadius();
 
 					RE::NiMatrix3 matrix{};
-					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, stl::RNG::GetSingleton()->Generate<float>(-RE::NI_PI, RE::NI_PI));
+					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
 
 					if (const auto effect = RE::BSTempEffectParticle::Spawn(a_cell, time, modelName.c_str(), matrix, pos, scale, 7, nullptr); effect) {
 						RE::BSSoundHandle soundHandle{};

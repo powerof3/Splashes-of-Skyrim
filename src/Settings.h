@@ -23,13 +23,12 @@ namespace Splashes
 	{
 		Base(std::string_view a_type, float a_displacementMult);
 
+		// members
 		std::string type{};
-
-		float displacementMult{};
-
 		std::string modelPath{};
 		std::string modelPathFire{};
 		std::string modelPathDragon{};
+		float displacementMult{};
 	};
 
 	struct Projectile : Base
@@ -38,6 +37,7 @@ namespace Splashes
 
 		void LoadSettings(CSimpleIniA& a_ini, bool a_writeComment = false);
 
+		// members
 		bool enableSplash{ true };
 		bool enableRipple{ true };
 	};
@@ -48,36 +48,16 @@ namespace Splashes
 
 		void LoadSettings(CSimpleIniA& a_ini);
 
+		// members
 		bool enable{ true };
 		bool fireOnly{ true };
 		float splashRadius{ 250.0f };
 	};
 
-	namespace INI
-	{
-		template <class T>
-		void get_value(CSimpleIniA& a_ini, T& a_value, const char* a_section, const char* a_key, const char* a_comment)
-		{
-			if constexpr (std::is_same_v<bool, T>) {
-				a_value = a_ini.GetBoolValue(a_section, a_key, a_value);
-				a_ini.SetBoolValue(a_section, a_key, a_value, a_comment);
-			} else if constexpr (std::is_floating_point_v<T>) {
-				a_value = static_cast<T>(a_ini.GetDoubleValue(a_section, a_key, a_value));
-				a_ini.SetDoubleValue(a_section, a_key, a_value, a_comment);
-			} else if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
-				a_value = string::lexical_cast<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
-				a_ini.SetValue(a_section, a_key, std::to_string(a_value).c_str(), a_comment);
-			} else {
-				a_value = a_ini.GetValue(a_section, a_key, a_value.c_str());
-				a_ini.SetValue(a_section, a_key, a_value.c_str(), a_comment);
-			}
-		}
-	}
-
-	class Settings
+	class Settings : public ISingleton<Settings>
 	{
 	public:
-		static Settings* GetSingleton();
+		void LoadSettings();
 
 		[[nodiscard]] float GetSplashRadius(SIZE a_size) const;
 		[[nodiscard]] float GetSplashScale(SIZE a_size) const;
@@ -93,10 +73,6 @@ namespace Splashes
 		[[nodiscard]] float GetExplosionSplashRadius() const;
 
 	private:
-		Settings();
-
-		void LoadSettings();
-
 		bool patchDisplacement{ true };
 		bool allowDamageWater{ false };
 

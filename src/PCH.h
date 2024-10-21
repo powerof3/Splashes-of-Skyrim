@@ -4,7 +4,11 @@
 #include "SKSE/SKSE.h"
 
 #pragma warning(push)
-#include <SimpleIni.h>
+#include <ClibUtil/RNG.hpp>
+#include <ClibUtil/numeric.hpp>
+#include <ClibUtil/simpleINI.hpp>
+#include <ClibUtil/singleton.hpp>
+#include <ClibUtil/string.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <xbyak/xbyak.h>
 #pragma warning(pop)
@@ -12,10 +16,12 @@
 #define DLLEXPORT __declspec(dllexport)
 
 namespace logger = SKSE::log;
-namespace numeric = SKSE::stl::numeric;
-namespace string = SKSE::stl::string;
+namespace string = clib_util::string;
+namespace numeric = clib_util::numeric;
+namespace ini = clib_util::ini;
 
 using namespace std::literals;
+using namespace clib_util::singleton;
 
 namespace stl
 {
