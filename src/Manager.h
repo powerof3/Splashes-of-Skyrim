@@ -37,10 +37,10 @@ namespace Splashes
 			//disabling cone water splash
 			if constexpr (type == kCone) {
 				REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(42638, 43806), OFFSET(0x48D, 0x3B7) };
-				REL::safe_write(target.address(), std::uint8_t{ 0xEB });
+				REL::WriteSafeData(target.address(), std::uint8_t{ 0xEB });
 			}
 
-			logger::info("Installed {}"sv, typeid(ProjectileManager).name());
+			REX::INFO("Installed {}"sv, typeid(ProjectileManager).name());
 		}
 
 	private:
@@ -79,18 +79,17 @@ namespace Splashes
 							}
 						}
 						const auto waterHeight = util::get_water_height(a_projectile, endPos);
-						if (!numeric::approximately_equal(endPos.z, startPos.z)) {
+						if (!REX::FLT::APPROXIMATELY_EQUAL(endPos.z, startPos.z)) {
 							const auto t = (waterHeight - startPos.z) / (endPos.z - startPos.z);
 							endPos.x = (endPos.x - startPos.x) * t + startPos.x;
 							endPos.y = (endPos.y - startPos.y) * t + startPos.y;
 						}
-						if (!numeric::essentially_equal(waterHeight, -RE::NI_INFINITY)) {
+						if (!REX::FLT::ESSENTIALLY_EQUAL(waterHeight, -RE::NI_INFINITY)) {
 							const auto level = (waterHeight - endPos.z) / a_projectile->GetHeight();
 							if (level >= 0.1f) {
 								if constexpr (type == kBeam) {  // beam isn't focused when hitting water
-									auto rng = clib_util::RNG();
-									endPos.x += rng.generate<float>(-20.0f, 20.0f);
-									endPos.y += rng.generate<float>(-20.0f, 20.0f);
+									endPos.x += REX::TRandom<float>().Generate(-20.0f, 20.0f);
+									endPos.y += REX::TRandom<float>().Generate(-20.0f, 20.0f);
 								}
 								endPos.z = waterHeight;
 								create_splash(a_projectile, endPos);
@@ -157,13 +156,13 @@ namespace Splashes
 									if (radius <= heavyRadius) {
 										if (radius <= mediumRadius) {
 											if (radius > lightRadius) {
-												audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterSmall", 17);
+												audioManager->GetSoundHandleByName(soundHandle, "CWaterSmall", 17);
 											}
 										} else {
-											audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterMedium", 17);
+											audioManager->GetSoundHandleByName(soundHandle, "CWaterMedium", 17);
 										}
 									} else {
-										audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterLarge", 17);
+										audioManager->GetSoundHandleByName(soundHandle, "CWaterLarge", 17);
 									}
 									if (soundHandle.IsValid()) {
 										soundHandle.SetPosition(a_pos);
@@ -174,7 +173,7 @@ namespace Splashes
 						}
 
 						RE::NiMatrix3 matrix{};
-						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
+						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, REX::TRandom<float>().Generate(-RE::NI_PI, RE::NI_PI));
 
 						std::string modelName;
 						float       time;
@@ -229,9 +228,9 @@ namespace Splashes
 
 			//skip vanilla explosion particle spawn (waste of emptyFX)
 			constexpr std::uint8_t JMP[] = { 0x90, 0xE9 };
-			REL::safe_write(target.address() + OFFSET(0x3A3, 0x57F), JMP, 2);
+			REL::WriteSafe(target.address() + OFFSET(0x3A3, 0x57F), JMP, 2);
 
-			logger::info("Installed {}"sv, typeid(ExplosionManager).name());
+			REX::INFO("Installed {}"sv, typeid(ExplosionManager).name());
 		}
 
 	private:
@@ -257,7 +256,7 @@ namespace Splashes
 			{
 				auto result = func(a_handle);
 
-				const auto explosion = stl::adjust_pointer<RE::Explosion>(&a_handle, -0xD8);
+				const auto explosion = REX::ADJUST_POINTER<RE::Explosion>(&a_handle, -0xD8);
 				const auto cell = explosion ? explosion->GetParentCell() : nullptr;
 				const auto root = cell && explosion->flags.any(RE::Explosion::Flags::kUnderwater) ? explosion->Get3D() : nullptr;
 
@@ -305,13 +304,13 @@ namespace Splashes
 					const auto scale = a_explosion->radius / setting->GetExplosionSplashRadius();
 
 					RE::NiMatrix3 matrix{};
-					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, clib_util::RNG().generate<float>(-RE::NI_PI, RE::NI_PI));
+					matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, REX::TRandom<float>().Generate(-RE::NI_PI, RE::NI_PI));
 
 					if (const auto effect = RE::BSTempEffectParticle::Spawn(a_cell, time, modelName.c_str(), matrix, pos, scale, 7, nullptr)) {
 						RE::BSSoundHandle soundHandle{};
 
 						if (const auto audioManager = RE::BSAudioManager::GetSingleton()) {
-							audioManager->BuildSoundDataFromEditorID(soundHandle, "CWaterExplosionSplash", 17);
+							audioManager->GetSoundHandleByName(soundHandle, "CWaterExplosionSplash", 17);
 						}
 
 						if (soundHandle.IsValid()) {

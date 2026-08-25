@@ -4,8 +4,8 @@ namespace Splashes
 {
 	FIRE_TYPE util::get_fire_type(const RE::NiAVObject* a_object)
 	{
-		if (string::icontains(a_object->name, "fire"sv) || string::icontains(a_object->name, "flame"sv)) {
-			if (string::icontains(a_object->name, "dragon"sv)) {
+		if (REX::STR::ICONTAINS(a_object->name, "fire"sv) || REX::STR::ICONTAINS(a_object->name, "flame"sv)) {
+			if (REX::STR::ICONTAINS(a_object->name, "dragon"sv)) {
 				return FIRE_TYPE::kDragon;
 			}
 			return FIRE_TYPE::kFire;
@@ -17,7 +17,7 @@ namespace Splashes
 	{
 		float waterHeight = a_ref->GetWaterHeight();
 
-		if (!numeric::essentially_equal(waterHeight, -RE::NI_INFINITY)) {
+		if (!REX::FLT::ESSENTIALLY_EQUAL(waterHeight, -RE::NI_INFINITY)) {
 			return waterHeight;
 		}
 
@@ -66,7 +66,7 @@ namespace Splashes
 	{
 		auto waterHeight = get_water_height(a_ref, a_pos);
 
-		if (numeric::approximately_equal(waterHeight, -RE::NI_INFINITY) || waterHeight <= a_pos.z) {
+		if (REX::FLT::APPROXIMATELY_EQUAL(waterHeight, -RE::NI_INFINITY) || waterHeight <= a_pos.z) {
 			return std::make_pair(waterHeight, 0.0f);
 		}
 
@@ -99,7 +99,7 @@ namespace Splashes
 
 		ExplosionManager::Install();
 
-		CSInstalled = GetModuleHandleA("CommunityShaders.dll") != nullptr;
+		CSInstalled = REX::W32::GetModuleHandleA("CommunityShaders.dll") != nullptr;
 	}
 
 	void InstallOnDataLoad()
@@ -120,7 +120,7 @@ namespace Splashes
 			}
 		}
 
-		logger::info("Patching {} water records to use displacement", count);
+		REX::INFO("Patching {} water records to use displacement", count);
 
 		if (const auto setting = RE::GetINISetting("bUseBulletWaterDisplacements")) {
 			setting->data.b = true;

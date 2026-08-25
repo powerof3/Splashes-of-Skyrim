@@ -1,35 +1,23 @@
 #pragma once
 
 #include "RE/Skyrim.h"
-#include "REX/REX/Singleton.h"
+#include "REX/REX.h"
 #include "SKSE/SKSE.h"
 
 #pragma warning(push)
-#include <ClibUtil/RNG.hpp>
-#include <ClibUtil/numeric.hpp>
-#include <ClibUtil/simpleINI.hpp>
-#include <ClibUtil/string.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <xbyak/xbyak.h>
 #pragma warning(pop)
 
 #define DLLEXPORT __declspec(dllexport)
-
-namespace logger = SKSE::log;
-namespace string = clib_util::string;
-namespace numeric = clib_util::numeric;
-namespace ini = clib_util::ini;
 
 using namespace std::literals;
 
 namespace stl
 {
-	using namespace SKSE::stl;
-
 	template <class T>
 	void write_thunk_call(std::uintptr_t a_src)
 	{
-		auto& trampoline = SKSE::GetTrampoline();
+		auto& trampoline = REL::GetTrampoline();
 		T::func = trampoline.write_call<5>(a_src, T::thunk);
 	}
 
