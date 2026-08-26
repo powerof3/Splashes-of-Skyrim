@@ -23,11 +23,11 @@ namespace Splashes
 			return waterHeight;
 		}
 
+		const bool allowDamageWater = Settings::GetSingleton()->GetAllowDamageWater();
+
 		if (const auto waterManager = RE::TESWaterSystem::GetSingleton()) {
 			const RE::BSSpinLockGuard locker(waterManager->lock);  //serialize against water-system mutations
-
-			const bool allowDamageWater = Settings::GetSingleton()->GetAllowDamageWater();
-			
+		
 			const auto get_nearest_water_object_height = [&]() {
 				for (const auto& waterObjectPtr : waterManager->waterObjects) {
 					const auto waterObject = waterObjectPtr.get();  //read slot once to avoid data race

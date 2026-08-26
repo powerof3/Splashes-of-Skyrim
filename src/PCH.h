@@ -48,7 +48,6 @@ namespace Runtime
 		(Runtime::IsAtLeast1_7_99() ? ae1799 : ae)
 #else
 #	define OFFSET(se, ae) se
-#	define OFFSET_VERSIONED(ae, ae1799) ae
 #	define OFFSET_3_VERSIONED(se, ae, ae1799) se
 #endif
 
