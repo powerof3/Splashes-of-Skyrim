@@ -4,13 +4,6 @@
 
 namespace Splashes
 {
-	enum class FIRE_TYPE
-	{
-		kNone = 0,
-		kFire,
-		kDragon
-	};
-
 	struct util
 	{
 		static FIRE_TYPE               get_fire_type(const RE::NiAVObject* a_object);
@@ -88,8 +81,9 @@ namespace Splashes
 							const auto level = (waterHeight - endPos.z) / a_projectile->GetHeight();
 							if (level >= 0.1f) {
 								if constexpr (type == kBeam) {  // beam isn't focused when hitting water
-									endPos.x += REX::TRandom<float>().Generate(-20.0f, 20.0f);
-									endPos.y += REX::TRandom<float>().Generate(-20.0f, 20.0f);
+									auto rng = REX::TRandom<float>();
+									endPos.x += rng.Generate(-20.0f, 20.0f);
+									endPos.y += rng.Generate(-20.0f, 20.0f);
 								}
 								endPos.z = waterHeight;
 								create_splash(a_projectile, endPos);
@@ -175,30 +169,18 @@ namespace Splashes
 						RE::NiMatrix3 matrix{};
 						matrix.SetEulerAnglesXYZ(-0.0f, -0.0f, REX::TRandom<float>().Generate(-RE::NI_PI, RE::NI_PI));
 
-						std::string modelName;
-						float       time;
+						const std::string* modelName = nullptr;
+						float              time = 1.0f;
 
 						if constexpr (type == kMissile || type == kCone || type == kFlame) {
-							switch (util::get_fire_type(root)) {
-							case FIRE_TYPE::kDragon:
-								modelName = projectile->modelPathDragon;
-								time = 2.0f;
-								break;
-							case FIRE_TYPE::kFire:
-								modelName = projectile->modelPathFire;
-								time = 1.0f;
-								break;
-							default:
-								modelName = projectile->modelPath;
-								time = 1.0f;
-								break;
-							}
+							const auto fireType = util::get_fire_type(root);
+							modelName = &projectile->GetModel(fireType);
+							time = Projectile::GetDuration(fireType);
 						} else {
-							modelName = projectile->modelPath;
-							time = 1.0f;
+							modelName = &projectile->GetModel(FIRE_TYPE::kNone);
 						}
 
-						RE::BSTempEffectParticle::Spawn(cell, time, modelName.c_str(), matrix, a_pos, scale, CSInstalled ? 1 : 7, nullptr);
+						RE::BSTempEffectParticle::Spawn(cell, time, modelName->c_str(), matrix, a_pos, scale, CSInstalled ? 1 : 7, nullptr);
 					}
 				}
 
@@ -223,12 +205,12 @@ namespace Splashes
 #ifndef SKYRIM_AE
 			stl::write_thunk_call<UpdateSound>(target.address() + 0x33C);
 #else
-			stl::write_thunk_call<UpdateSoundHandle>(target.address() + 0x528);
+			stl::write_thunk_call<UpdateSoundHandle>(target.address() + OFFSET_VERSIONED(0x528, 0x545));
 #endif
 
 			//skip vanilla explosion particle spawn (waste of emptyFX)
 			constexpr std::uint8_t JMP[] = { 0x90, 0xE9 };
-			REL::WriteSafe(target.address() + OFFSET(0x3A3, 0x57F), JMP, 2);
+			REL::WriteSafe(target.address() + OFFSET_3_VERSIONED(0x3A3, 0x57F, 0x59C), JMP, 2);
 
 			REX::INFO("Installed {}"sv, typeid(ExplosionManager).name());
 		}
@@ -280,26 +262,12 @@ namespace Splashes
 				const auto         startPos = a_explosion->GetPosition();
 				const RE::NiPoint3 pos{ startPos.x, startPos.y, util::get_water_height(a_explosion, startPos) };
 
-				const auto type = util::get_fire_type(a_root);
-				if (!explosionSetting->fireOnly || type != FIRE_TYPE::kNone) {
+				const auto fireType = util::get_fire_type(a_root);
+				if (!explosionSetting->fireOnly || fireType != FIRE_TYPE::kNone) {
 					a_root->SetAppCulled(true);
 
-					std::string modelName;
-					float       time;
-
-					switch (type) {
-					case FIRE_TYPE::kDragon:
-						modelName = explosionSetting->modelPathDragon;
-						time = 2.0f;
-						break;
-					case FIRE_TYPE::kFire:
-						modelName = explosionSetting->modelPathFire;
-						time = 1.0f;
-						break;
-					default:
-						modelName = explosionSetting->modelPath;
-						time = 1.0f;
-					}
+					const auto& modelName = explosionSetting->GetModel(fireType);
+					const float time = Explosion::GetDuration(fireType);
 
 					const auto scale = a_explosion->radius / setting->GetExplosionSplashRadius();
 

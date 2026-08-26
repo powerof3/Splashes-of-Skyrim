@@ -4,8 +4,10 @@ namespace Splashes
 {
 	FIRE_TYPE util::get_fire_type(const RE::NiAVObject* a_object)
 	{
-		if (REX::STR::ICONTAINS(a_object->name, "fire"sv) || REX::STR::ICONTAINS(a_object->name, "flame"sv)) {
-			if (REX::STR::ICONTAINS(a_object->name, "dragon"sv)) {
+		std::string_view name = a_object->name;
+		
+		if (REX::STR::ICONTAINS(name, "fire"sv) || REX::STR::ICONTAINS(name, "flame"sv)) {
+			if (REX::STR::ICONTAINS(name, "dragon"sv)) {
 				return FIRE_TYPE::kDragon;
 			}
 			return FIRE_TYPE::kFire;
@@ -24,7 +26,7 @@ namespace Splashes
 		if (const auto waterManager = RE::TESWaterSystem::GetSingleton()) {
 			const RE::BSSpinLockGuard locker(waterManager->lock);  //serialize against water-system mutations
 
-			const auto settings = Settings::GetSingleton();
+			const bool allowDamageWater = Settings::GetSingleton()->GetAllowDamageWater();
 			
 			const auto get_nearest_water_object_height = [&]() {
 				for (const auto& waterObjectPtr : waterManager->waterObjects) {
@@ -32,7 +34,7 @@ namespace Splashes
 					if (!waterObject) {
 						continue;
 					}
-					if (!settings->GetAllowDamageWater()) {
+					if (!allowDamageWater) {
 						if (const auto waterForm = waterObject->waterType; waterForm && waterForm->GetDangerous()) {
 							continue;
 						}

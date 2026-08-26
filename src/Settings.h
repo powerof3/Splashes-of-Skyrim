@@ -19,6 +19,13 @@ namespace Splashes
 		kLight
 	};
 
+	enum class FIRE_TYPE
+	{
+		kNone = 0,
+		kFire,
+		kDragon
+	};
+
 	struct Base
 	{
 		Base(std::string_view a_type, float a_displacementMult, std::string_view a_nif, std::string_view a_nifFire, std::string_view a_nifDragon) :
@@ -28,6 +35,20 @@ namespace Splashes
 			modelPathFire(a_type, "sNifPathFire", std::string(a_nifFire)),
 			modelPathDragon(a_type, "sNifPathDragonFire", std::string(a_nifDragon))
 		{}
+
+		[[nodiscard]] const std::string& GetModel(FIRE_TYPE a_fireType) const
+		{
+			switch (a_fireType) {
+			case FIRE_TYPE::kDragon:
+				return modelPathDragon;
+			case FIRE_TYPE::kFire:
+				return modelPathFire;
+			default:
+				return modelPath;
+			}
+		}
+
+		static float GetDuration(FIRE_TYPE a_fireType) { return a_fireType == FIRE_TYPE::kDragon ? 2.0f : 1.0f; }
 
 		// members
 		std::string_view              type;
